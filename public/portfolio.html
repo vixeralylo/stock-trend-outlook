@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Portfolio - Saham Indonesia Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .pf-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+    .pf-summary .item{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:14px 16px}
+    .pf-summary .label{color:var(--muted);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+    .pf-summary .value{font-size:22px;font-weight:800;margin-top:6px;font-family:'JetBrains Mono',monospace}
+    .pf-summary .value.buy{color:var(--buy)}
+    .pf-summary .value.sell{color:var(--sell)}
+    .pf-input{display:grid;grid-template-columns:120px 100px 140px auto;gap:10px;align-items:end;background:var(--surface-2);padding:14px 16px;border-radius:12px;border:1px solid var(--border);margin-bottom:18px}
+    .pf-input label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:4px}
+    .pf-input input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+    .pf-input input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,108,255,.15)}
+    .pf-table{width:100%;font-size:13px}
+    .pf-table th{font-size:10px;padding:8px 6px}
+    .pf-table td{padding:10px 6px;font-size:13px;vertical-align:middle}
+    .pf-table .sym{font-weight:800;font-size:14px}
+    .pf-table .reco{padding:5px 10px;border-radius:6px;font-size:11px;font-weight:700;display:inline-block;white-space:nowrap}
+    .pf-table .reco.buy{background:var(--buy-bg);color:var(--buy)}
+    .pf-table .reco.sell{background:var(--sell-bg);color:var(--sell)}
+    .pf-table .reco.neutral{background:var(--neutral-bg);color:var(--neutral)}
+    .pf-table .del{background:var(--sell-bg);color:var(--sell);border:1px solid rgba(255,61,94,.25);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:600}
+    .pf-table .del:hover{background:var(--sell);color:#fff}
+    .pf-table .reason-row td{background:var(--surface-2);font-size:12px;color:var(--muted);padding:8px 16px;border-top:0}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="dot">SI</div>
+      <div>
+        <h1>Saham Indonesia Analyzer</h1>
+        <div class="sub">My Portfolio</div>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a href="/">Screener</a>
+      <a href="/analyze.html">Analisa Detail</a>
+      <a href="/portfolio.html" class="active">Portfolio</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card acc-green">
+      <h2>Tambah Holding</h2>
+      <div class="pf-input">
+        <div><label>Kode Emiten</label><input id="inSymbol" type="text" placeholder="BBRI" maxlength="6" style="text-transform:uppercase;font-weight:700;"></div>
+        <div><label>Lot</label><input id="inLot" type="number" placeholder="29" min="1" step="1"></div>
+        <div><label>Avg Price (per saham)</label><input id="inAvg" type="number" placeholder="3590" min="1" step="0.01"></div>
+        <button id="btnAdd" class="primary small" style="height:40px;">+ Tambah</button>
+      </div>
+      <div style="color:var(--muted);font-size:12px;">Data tersimpan di browser ini. 1 lot = 100 lembar saham.</div>
+    </div>
+
+    <div class="card acc-cyan" style="margin-top:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="margin:0;">Ringkasan Portfolio</h2>
+        <button id="btnRefresh" class="primary small">Refresh Harga</button>
+      </div>
+      <div class="pf-summary" id="summaryBox">
+        <div class="item"><div class="label">Total Cost</div><div class="value" id="sCost">-</div></div>
+        <div class="item"><div class="label">Total Value</div><div class="value" id="sValue">-</div></div>
+        <div class="item"><div class="label">Unrealized P/L</div><div class="value" id="sPL">-</div></div>
+        <div class="item"><div class="label">Return</div><div class="value" id="sPct">-</div></div>
+      </div>
+    </div>
+
+    <div class="card acc-pink" style="margin-top:20px;">
+      <h2>Holdings & Rekomendasi</h2>
+      <div id="pfStatus" style="color:var(--muted);text-align:center;padding:20px;">Belum ada holding. Tambah di atas.</div>
+      <div style="overflow-x:auto;">
+        <table class="pf-table" id="pfTable" style="display:none;">
+          <thead>
+            <tr>
+              <th>Emiten</th>
+              <th class="num">Lot</th>
+              <th class="num">Avg Price</th>
+              <th class="num">Harga Now</th>
+              <th class="num">Cost</th>
+              <th class="num">Value</th>
+              <th class="num">P/L</th>
+              <th class="num">%</th>
+              <th>Rekomendasi</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pfBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+<script src="/portfolio.js"></script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Analisa Detail - Saham Indonesia Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.umd.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="dot">SI</div>
+      <div>
+        <h1>Saham Indonesia Analyzer</h1>
+        <div class="sub">Analisa Detail Emiten</div>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a href="/">Screener</a>
+      <a href="/analyze.html" class="active">Analisa Detail</a>
+      <a href="/portfolio.html">Portfolio</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="controls">
+      <input id="emiten" type="text" placeholder="Masukkan kode emiten (contoh: BBCA, TLKM, ASII)" autocomplete="off" />
+      <button id="analyzeBtn" class="primary">Analisa Sekarang</button>
+    </div>
+    <div id="error" class="err"></div>
+
+    <section id="result" style="display:none;">
+      <div class="reco-row">
+        <div class="card acc-green">
+          <h2>Rekomendasi</h2>
+          <div class="reco">
+            <div>
+              <div class="name" id="emitenName"></div>
+              <div class="last" id="lastInfo"></div>
+            </div>
+            <span id="recoBadge" class="badge">-</span>
+          </div>
+          <div class="plan">
+            <div class="item"><div class="label">Harga Sekarang</div><div class="value" id="planCurrent">-</div></div>
+            <div class="item"><div class="label">Entry Optimal</div><div class="value" id="planEntry">-</div><div class="label" id="planEntryDist" style="margin-top:4px;text-transform:none;font-weight:500;"></div></div>
+            <div class="item"><div class="label">Initial Stop Loss</div><div class="value sell" id="planStop">-</div><div class="label" id="planStopLabel" style="margin-top:4px;text-transform:none;font-weight:500;"></div></div>
+            <div class="item"><div class="label">Trailing Stop (MA21)</div><div class="value" id="planTrailing" style="color:var(--neutral);">-</div></div>
+          </div>
+          <div class="plan" style="grid-template-columns:1fr 1fr 1fr;margin-top:10px;">
+            <div class="item"><div class="label">Resistance / TP Zone</div><div class="value buy" id="planResistance">-</div><div class="label" id="planResistancePct" style="margin-top:4px;text-transform:none;font-weight:500;"></div></div>
+            <div class="item"><div class="label">Risk : Reward</div><div class="value" id="planRR">-</div></div>
+            <div class="item"><div class="label">Entry Type</div><div class="value" id="planEntryType" style="font-size:14px;">-</div></div>
+          </div>
+          <div id="planStrategy" style="font-size:13px;padding:10px 12px;background:var(--surface-2);border-radius:8px;border-left:3px solid var(--accent);margin-top:12px;color:var(--muted);"></div>
+          <div style="margin-top:18px;padding:16px;background:var(--surface-2);border-radius:12px;border:1px solid var(--border);">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;">Untuk yang sudah punya saham ini</div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">
+              <span id="holderLabel" class="badge" style="font-size:14px;padding:8px 16px;">-</span>
+            </div>
+            <div id="holderReason" style="font-size:13.5px;line-height:1.6;color:var(--text);"></div>
+          </div>
+        </div>
+
+        <div class="card acc-orange">
+          <h2>Fibonacci Retracement</h2>
+          <div>
+            <div style="font-size:18px;font-weight:700;" id="fiboTrend">-</div>
+            <div class="fibo-summary" id="fiboSummary"></div>
+          </div>
+          <div style="margin-top:12px;color:var(--muted);font-size:12px;">Buy zone (Golden Pocket) di 38.2-61.8% retracement saat tren naik.</div>
+        </div>
+      </div>
+
+      <div class="card chart-card acc-cyan" style="margin-top:20px;">
+        <h2>Pergerakan harga 60 hari + MA9/21 + Fibonacci buy zone</h2>
+        <div style="height:540px;position:relative;"><canvas id="priceChart"></canvas></div>
+      </div>
+
+      <div class="indicator-grid" id="indicatorGrid"></div>
+
+      <div class="card acc-cyan" style="margin-top:20px;">
+        <h2>Berita & Sentimen <span style="color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;font-size:12px;" id="newsSummary">(bahan bacaan, tidak mempengaruhi rekomendasi)</span></h2>
+        <div class="news-list" id="newsList"></div>
+      </div>
+      </div>
+      <div id="warnings"></div>
+      <p class="disclaimer" id="disclaimer"></p>
+    </section>
+  </main>
+
+<script src="/analyze.js"></script>
+</body>
+</html>

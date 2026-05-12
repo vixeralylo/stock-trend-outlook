@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock Screener - Saham Indonesia Analyzer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <div class="dot">SI</div>
+      <div>
+        <h1>Saham Indonesia Analyzer</h1>
+        <div class="sub">Stock Screener IDX</div>
+      </div>
+    </div>
+    <nav class="topnav">
+      <a href="/" class="active">Screener</a>
+      <a href="/analyze.html">Analisa Detail</a>
+      <a href="/portfolio.html">Portfolio</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card acc-pink">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:8px;">
+        <h2 style="margin:0;">Stock Screener - Top Pick</h2>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span style="color:var(--muted);font-size:12px;" id="screenerMeta">Loading...</span>
+          <button id="screenerBtn" class="primary small" style="display:none;">Refresh</button>
+        </div>
+      </div>
+      <div class="screener-grid" id="screenerResult" style="display:none;">
+        <div class="screener-col buy">
+          <h3><span class="ic">B</span> Top 10 BUY - Best Entry</h3>
+          <div class="screener-list" id="topBuyList"></div>
+        </div>
+        <div class="screener-col sell">
+          <h3><span class="ic">S</span> Top 10 SELL - Hindari</h3>
+          <div class="screener-list" id="topSellList"></div>
+        </div>
+      </div>
+      <div id="screenerStatus" style="color:var(--muted);padding:16px;text-align:center;">Memuat scan saham IDX...</div>
+    </div>
+  </main>
+
+<script>
+const $ = id => document.getElementById(id);
+function setText(id,v){var e=$(id); if(e) e.textContent=v;}
+function fmt(n,d){ if(n==null||Number.isNaN(n)) return '-'; return Number(n).toLocaleString('id-ID',{maximumFractionDigits:d==null?2:d}); }
+
+function renderScreenerItem(item, rank, side){
+  var sigBadges = [];
+  Object.entries(item.signals).forEach(([k,v]) => {
+    if(v==='BUY') sigBadges.push('<span class="buy">'+k+'+</span>');
+    else if(v==='SELL') sigBadges.push('<span class="sell">'+k+'-</span>');
+  });
+  if(item.inGoldenPocket) sigBadges.push('<span class="buy">GP</span>');
+  function pctTag(label, val) {
+    if (val == null || val === undefined || val === 'undefined') {
+      return '<span class="pct-tag" title="' + label + '">'+label+': -</span>';
+    }
+    var n = Number(val);
+    if (Number.isNaN(n)) {
+      return '<span class="pct-tag" title="' + label + '">'+label+': -</span>';
+    }
+    var c = n >= 0 ? 'pos' : 'neg';
+    var s = n >= 0 ? '+' : '';
+    return '<span class="pct-tag '+c+'" title="' + label + '">'+label+': '+s+n.toFixed(2)+'%</span>';
+  }
+  var div = document.createElement('a');
+  div.href = '/analyze.html?emiten=' + item.symbol;
+  div.className = 'screener-item';
+  div.style.textDecoration = 'none';
+  div.style.color = 'inherit';
+  div.innerHTML =
+    '<div class="screener-rank">#'+rank+'</div>' +
+    '<div style="min-width:0;"><div class="screener-symbol">'+item.symbol+'</div>' +
+    '<div class="sub">'+sigBadges.join('')+(item.rsi?'<span>RSI '+item.rsi+'</span>':'')+(item.trend?'<span>'+item.trend+'</span>':'')+'</div>' +
+    '<div class="pct-row">'+pctTag('1d',item.pct1d)+pctTag('7d',item.pct7d)+pctTag('30d',item.pct30d)+'</div></div>' +
+    '<div class="screener-price">'+fmt(item.price)+'</div>' +
+    '<div class="screener-score '+side+'">'+(item.score>=0?'+':'')+item.score+'</div>';
+  return div;
+}
+
+async function loadScreener(){
+  var btn = $('screenerBtn'), status = $('screenerStatus');
+  if(btn){ btn.disabled = true; btn.textContent = 'Scanning...'; }
+  if(status){ status.style.display = 'block'; status.textContent = 'Memuat scan saham IDX, mohon tunggu (~30 detik)...'; }
+  try {
+    var res = await fetch('/api/screener' + (window._forceFresh ? '?refresh=1' : ''));
+    window._forceFresh = false;
+    var data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Error');
+    $('screenerResult').style.display = 'grid';
+    if(status) status.style.display = 'none';
+    var buy = data.topBuy||[], sell = data.topSell||[];
+    var bl = $('topBuyList'), sl = $('topSellList');
+    if(bl){ bl.innerHTML = ''; if(buy.length) buy.forEach((it,i)=>bl.appendChild(renderScreenerItem(it,i+1,'buy'))); else bl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">Tidak ada saham dengan skor BUY signifikan</div>'; }
+    if(sl){ sl.innerHTML = ''; if(sell.length) sell.forEach((it,i)=>sl.appendChild(renderScreenerItem(it,i+1,'sell'))); else sl.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">Tidak ada saham dengan skor SELL signifikan</div>'; }
+    setText('screenerMeta', 'Discan '+data.successCount+'/'+data.totalScanned+' saham - '+new Date(data.scannedAt).toLocaleTimeString('id-ID'));
+  } catch(e){
+    if(status) status.textContent = 'Gagal: '+e.message;
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = 'Refresh'; btn.style.display = 'inline-block'; }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  var sb = $('screenerBtn');
+  if(sb) sb.addEventListener('click', function(){ window._forceFresh = true; loadScreener(); });
+  // Auto-load saat halaman dibuka
+  loadScreener();
+});
+</script>
+</body>
+</html>
