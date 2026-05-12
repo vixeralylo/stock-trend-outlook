@@ -1,0 +1,46 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: stock-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - GOAPI_TOKEN=${GOAPI_TOKEN}
+      - GOAPI_BASE=${GOAPI_BASE:-https://api.goapi.io}
+      - STOCKBIT_TOKEN=${STOCKBIT_TOKEN}
+    expose:
+      - "3000"
+    networks:
+      - stocknet
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: stock-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "39761:80"
+    networks:
+      - stocknet
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/nginx-health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  stocknet:
+    driver: bridge
