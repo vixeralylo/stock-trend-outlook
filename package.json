@@ -5,7 +5,12 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "nodemon --watch server.js --watch indicators.js --watch public --ext js,html,css server.js",
+    "build": "node -c server.js && node -c indicators.js && node -e \"require('./server.js')\" --check && echo Build OK",
+    "check": "node --check server.js && node --check indicators.js",
+    "install:fresh": "rm -rf node_modules package-lock.json && npm install",
+    "clean-cache": "node -e \"console.log('Cache di-clear via API: GET /api/screener?refresh=1')\"",
+    "scan-now": "curl -s http://localhost:3000/api/screener?refresh=1 > /dev/null && echo Scan triggered"
   },
   "dependencies": {
     "express": "^4.19.2",
@@ -13,6 +18,9 @@
     "axios": "^1.7.2",
     "dotenv": "^16.4.5",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   },
   "engines": {
     "node": ">=18"
